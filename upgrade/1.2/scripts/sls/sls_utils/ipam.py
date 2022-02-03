@@ -315,13 +315,16 @@ def prefixlength(network):
 
 
 def temp_is_subnet_of(a, b):
-    """Tests if a is a subnet of b.
+    """Test if a is a subnet of b.
 
     Workaround for python versions < 3.7
 
     Args:
         a (ipaddress.IPv4Network): The proposed inside network
         b (ipaddress.IPv4Network): The outside network
+
+    Returns:
+        True if a is a subnet of b, else False
 
     Raises:
         TypeError: If both addresses are not IPv4 or both are not IPv6
@@ -330,8 +333,9 @@ def temp_is_subnet_of(a, b):
         # Always false if one is v4 and the other is v6.
         if a._version != b._version:
             raise TypeError(f"{a} and {b} are not of the same version")
-        return (b.network_address <= a.network_address and
-                b.broadcast_address >= a.broadcast_address)
+        return (
+            b.network_address <= a.network_address
+            and b.broadcast_address >= a.broadcast_address  # noqa W503
+        )
     except AttributeError:
-        raise TypeError(f"Unable to test subnet containment "
-                        f"between {a} and {b}")
+        raise TypeError(f"Unable to test subnet containment " f"between {a} and {b}")  # noqa D202

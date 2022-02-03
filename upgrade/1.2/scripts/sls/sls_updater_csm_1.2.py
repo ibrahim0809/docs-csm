@@ -43,14 +43,14 @@ help = """Upgrade a system SLS file from CSM 1.0 to CSM 1.2.
 
     1. Migrate switch naming (in order):  leaf to leaf-bmc and agg to leaf.\n
     2. Remove api-gateway entries from HMLB subnets for CSM 1.2 security.\n
-    3. Create the new BICAN "toggle" network.\n
-    4. Migrate the existing CAN to CMN.\n
-    5. Create the CHN network.\n
-    6. Convert IPs of the CAN network.\n
-    7. Create MetalLB Pools and ASN entries on CMN and NMN networks.\n
-    7. Remove kubeapi-vip reservations for all networks except NMN.\n
-    8. Update uai_macvlan in NMN dhcp ranges and uai_macvlan VLAN.\n
-    9. Remove unused user networks (CAN or CHN) if requested [--remove-unused-user-network].\n
+    3. Remove kubeapi-vip reservations for all networks except NMN.\n
+    4. Create the new BICAN "toggle" network.\n
+    5. Migrate the existing CAN to CMN.\n
+    7. Create the CHN network.\n
+    7. Convert IPs of the CAN network.\n
+    8. Create MetalLB Pools and ASN entries on CMN and NMN networks.\n
+    9. Update uai_macvlan in NMN dhcp ranges and uai_macvlan VLAN.\n
+   10. Remove unused user networks (CAN or CHN) if requested [--remove-unused-user-network].\n
 """
 
 
@@ -184,6 +184,10 @@ def main(
     remove_api_gw_from_hmnlb_reservations(networks)
 
     #
+    # Remove kube-api reservations from all networks except NMN.
+    remove_kube_api_reservations(networks)
+
+    #
     # Create BICAN network
     #   (not order dependent)
     create_bican_network(networks, default_route_network_name=bican_user_network_name)
@@ -209,10 +213,6 @@ def main(
     # Add BGP peering data to CMN and NMN
     #   (ORDER DEPENDENT!!! - Must be run after CMN creation)
     create_metallb_pools_and_asns(networks, bgp_asn, bgp_nmn_asn, bgp_cmn_asn)
-
-    #
-    # Remove kube-api reservations from all networks except NMN.
-    remove_kube_api_reservations(networks)
 
     #
     # Update uai_macvlan dhcp ranges in the NMN network.

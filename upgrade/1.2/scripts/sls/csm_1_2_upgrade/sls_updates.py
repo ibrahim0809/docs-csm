@@ -46,20 +46,14 @@ def migrate_switch_names(networks):
     Args:
         networks (sls_utils.Managers.NetworkManager): Dictionary of SLS networks
     """
-    # Use existence of agg switches in network_hardware subnet in the
-    # MTL network to determine if switch naming needs to be done.
-    #
+    # The BICAN network only exists in CSM >=1.2.  If it exists do NOT migrate
+    # switch names.
     # WARNING:  If this check is not in place the script is not guaranteed to
     # be idempotent!
-    subnet = "network_hardware"
-    mtl_network_hardware_subnet = networks.get("MTL").subnets().get(subnet)
-    aggregation_switches = [
-        reservation
-        for reservation in mtl_network_hardware_subnet.reservations().keys()
-        if "agg" in reservation
-    ]
-    if not aggregation_switches:
+    if networks.get("BICAN") is not None:
         return
+
+    subnet = "network_hardware"
 
     click.secho("Migrating switch naming.", fg="bright_white")
     for network in networks.values():
@@ -149,8 +143,8 @@ def update_nmn_uai_macvlan_dhcp_ranges(networks):
     ]
     dhcp_start = max(reservations) + 1
     dhcp_end = sorted(free_ipv4_addresses(uai_macvlan_subnet))[-1]
-    uai_macvlan_subnet.dhcp_start_address(dhcp_start)
-    uai_macvlan_subnet.dhcp_end_address(dhcp_end)
+    uai_macvlan_subnet.reservation_start_address(dhcp_start)
+    uai_macvlan_subnet.reservation_end_address(dhcp_end)
 
     click.secho(
         "Updating uai_macvlan subnet VLAN in NMN network",
@@ -206,8 +200,8 @@ def create_metallb_pools_and_asns(networks, bgp_asn, bgp_nmn_asn, bgp_cmn_asn):
     metallb_subnet_name_map = {
         "can_metallb_address_pool": "customer-access",
         "chn_metallb_address_pool": "customer-high-speed",
-        "cmn_metallb_static_pool": "customer-management-static",
         "cmn_metallb_address_pool": "customer-management",
+        "cmn_metallb_static_pool": "customer-management-static",
         "hmn_metallb_address_pool": "hardware-management",
         "nmn_metallb_address_pool": "node-management",
     }
@@ -525,6 +519,7 @@ def migrate_can_to_cmn(networks):
     )
     old_static_pool = can_network.subnets().get("can_metallb_static_pool").to_sls()
     cmn_metallb_static_pool = Subnet.subnet_from_sls_data(old_static_pool)
+    cmn_metallb_static_pool.name("cmn_metallb_static_pool")
     cmn_metallb_static_pool.full_name("CMN Static Pool MetalLB")
     cmn_metallb_static_pool.ipv4_address(static_pool_ipv4_network)
     cmn_metallb_static_pool.ipv4_gateway(list(static_pool_ipv4_network.hosts())[0])
@@ -540,6 +535,7 @@ def migrate_can_to_cmn(networks):
     )
     old_dynamic_pool = can_network.subnets().get("can_metallb_address_pool").to_sls()
     cmn_metallb_address_pool = Subnet.subnet_from_sls_data(old_dynamic_pool)
+    cmn_metallb_address_pool.name("cmn_metallb_address_pool")
     cmn_metallb_address_pool.full_name("CMN Dynamic MetalLB")
     cmn_metallb_address_pool.ipv4_address(dynamic_pool_ipv4_network)
     cmn_metallb_address_pool.ipv4_gateway(list(dynamic_pool_ipv4_network.hosts())[0])

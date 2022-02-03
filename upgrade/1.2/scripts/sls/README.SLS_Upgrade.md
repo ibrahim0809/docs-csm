@@ -26,16 +26,16 @@ This migration script is performed offline for data security.  The running SLS f
 
 For large production systems:
 
-    1. Migrate switch naming (in order):  leaf to leaf-bmc and agg to leaf.
-    2. Remove api-gateway entries from HMLB subnets for CSM 1.2 security.
-    3. Create the new BICAN "toggle" network.
-    4. Migrate the existing CAN to CMN.
-    5. Create the CHN network.
-    6. Convert IPs of the CAN network.
-    7. Create MetalLB Pools and ASN entries on CMN and NMN networks.
-    7. Remove kubeapi-vip reservations for all networks except NMN.
-    8. Update uai_macvlan in NMN dhcp ranges and uai_macvlan VLAN.
-    9. Remove unused user networks (CAN or CHN) if requested [--remove-unused-user-network]
+    1. Migrate switch naming (in order):  leaf to leaf-bmc and agg to leaf.\n
+    2. Remove api-gateway entries from HMLB subnets for CSM 1.2 security.\n
+    3. Remove kubeapi-vip reservations for all networks except NMN.\n
+    4. Create the new BICAN "toggle" network.\n
+    5. Migrate the existing CAN to CMN.\n
+    7. Create the CHN network.\n
+    7. Convert IPs of the CAN network.\n
+    8. Create MetalLB Pools and ASN entries on CMN and NMN networks.\n
+    9. Update uai_macvlan in NMN dhcp ranges and uai_macvlan VLAN.\n
+   10. Remove unused user networks (CAN or CHN) if requested [--remove-unused-user-network].
 
 # Migrate switch names
 Switch names change in CSM 1.2 and must be applied in the following order:
@@ -50,6 +50,9 @@ These aliases provided DNS records and are being removed.
 
 # Create the BICAN network "toggle"
 New for CSM 1.2 the BICAN network ExtraProperties value of SystemDefaultRoute is used to point to the CAN, CHN or CMN and used by utilities to systemically toggle routes.
+
+# Remove kubeapi-vip reservations for all networks except NMN
+Self explanatory.  This endpoint now exists only on the NMN.
 
 # Migrate (existing) CAN to (new) CMN
 Using the existing CAN as a template, create the CMN.  The same IPs will be preserved for
@@ -82,9 +85,6 @@ In CMN and NMN:
     "Subnets": [
       {
 ```
-
-# Remove kubeapi-vip reservations for all networks except NMN
-Self explanatory.  This endpoint now exists only on the NMN.
 
 # Update uai_macvlan in NMN ranges and uai_macvlan VLAN
 Self explanatory.  Ranges are used for the addresses of UAIs.
